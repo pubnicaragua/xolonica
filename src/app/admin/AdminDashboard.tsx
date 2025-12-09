@@ -25,6 +25,7 @@ interface Business {
   verification_level: number;
   product_count: number;
   created_at: string;
+  owner_id?: string;
 }
 
 interface Stats {
@@ -109,11 +110,11 @@ export default function AdminDashboard() {
 
       // Crear notificación para el dueño
       const business = businesses.find(b => b.id === businessId);
-      if (business) {
+      if (business && business.owner_id) {
         await supabase
           .from('notifications')
           .insert({
-            user_id: business.id,
+            user_id: business.owner_id,
             title: '¡Tu negocio ha sido verificado!',
             message: `Tu negocio "${business.name}" ha sido aprobado y ahora aparece en Xolonica.store`,
             type: 'approval',
@@ -143,11 +144,11 @@ export default function AdminDashboard() {
 
       // Crear notificación para el dueño
       const business = businesses.find(b => b.id === businessId);
-      if (business) {
+      if (business && business.owner_id) {
         await supabase
           .from('notifications')
           .insert({
-            user_id: business.id,
+            user_id: business.owner_id,
             title: 'Tu negocio ha sido rechazado',
             message: `Tu negocio "${business.name}" ha sido rechazado. Razón: ${reason || 'No especificada'}`,
             type: 'rejection',
