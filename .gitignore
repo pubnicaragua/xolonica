@@ -1,7 +1,9 @@
 # Dependencies
 node_modules/
+src/node_modules/
 /.pnp
 .pnp.js
+package-lock.json
 
 # Testing
 /coverage
@@ -9,6 +11,9 @@ node_modules/
 # Next.js
 /.next/
 /out/
+.next/
+src/.next/
+.vercel/
 
 # Production
 /build
