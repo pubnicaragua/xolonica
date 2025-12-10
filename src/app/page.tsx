@@ -104,7 +104,11 @@ export default async function HomePage() {
           </div>
           
           <div className="max-w-4xl mx-auto">
-            <div className="bg-white rounded-3xl shadow-xl p-8 md:p-10 border border-gray-100">
+            <form
+              method="GET"
+              action="/negocios"
+              className="bg-white rounded-3xl shadow-xl p-8 md:p-10 border border-gray-100"
+            >
               <div className="grid md:grid-cols-2 gap-6 mb-6">
                 <div>
                   <label className="block text-gray-700 mb-3 text-sm font-semibold uppercase tracking-wide">
@@ -112,7 +116,10 @@ export default async function HomePage() {
                   </label>
                   <div className="relative">
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
-                    <select className="w-full pl-12 pr-4 py-4 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900 font-medium">
+                    <select
+                      name="category"
+                      className="w-full pl-12 pr-4 py-4 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900 font-medium"
+                    >
                       <option value="">Todas las categorías</option>
                       {CATEGORIES.map((category) => (
                         <option key={category} value={category}>
@@ -126,7 +133,10 @@ export default async function HomePage() {
                   <label className="block text-gray-700 mb-3 text-sm font-semibold uppercase tracking-wide">
                     Ciudad
                   </label>
-                  <select className="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900 font-medium">
+                  <select
+                    name="city"
+                    className="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900 font-medium"
+                  >
                     <option value="">Todas las ciudades</option>
                     {NICARAGUA_CITIES.map((city) => (
                       <option key={city} value={city}>
@@ -136,17 +146,17 @@ export default async function HomePage() {
                   </select>
                 </div>
               </div>
-              
+
               <div className="flex justify-center">
-                <Link
-                  href="/negocios"
+                <button
+                  type="submit"
                   className="inline-flex items-center gap-2 bg-blue-600 text-white px-8 py-4 rounded-xl hover:bg-blue-700 hover:shadow-lg transition-all font-semibold"
                 >
-                  Ver todos los negocios
+                  Ver negocios filtrados
                   <ArrowRight className="w-5 h-5" />
-                </Link>
+                </button>
               </div>
-            </div>
+            </form>
           </div>
         </div>
       </section>

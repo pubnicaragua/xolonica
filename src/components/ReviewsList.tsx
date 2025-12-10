@@ -31,15 +31,34 @@ export function ReviewsList({ businessId }: ReviewsListProps) {
   };
 
   const loadReviews = async () => {
+    setLoading(true);
+
+    // Intento principal: con join a user_profiles para mostrar el nombre
     const { data, error } = await supabase
       .from('reviews')
       .select('*, user_profiles(display_name)')
       .eq('business_id', businessId)
       .order('created_at', { ascending: false });
 
-    if (!error && data) {
-      setReviews(data);
+    if (error) {
+      console.error('Error cargando reseñas con perfiles:', error);
+
+      // Fallback: cargar solo desde reviews sin join, para al menos mostrar comentarios
+      const { data: fallback, error: fallbackError } = await supabase
+        .from('reviews')
+        .select('*')
+        .eq('business_id', businessId)
+        .order('created_at', { ascending: false });
+
+      if (fallbackError) {
+        console.error('Error cargando reseñas sin perfiles:', fallbackError);
+      } else if (fallback) {
+        setReviews(fallback as Review[]);
+      }
+    } else if (data) {
+      setReviews(data as Review[]);
     }
+
     setLoading(false);
   };
 
@@ -64,13 +83,18 @@ export function ReviewsList({ businessId }: ReviewsListProps) {
       comment,
     });
 
-    if (!error) {
-      setComment('');
-      setRating(5);
-      setIsWritingReview(false);
-      loadReviews();
+    if (error) {
+      console.error('Error al enviar reseña:', error);
+      alert(`Error al publicar la reseña: ${error.message}. Verifica que tengas permisos o intenta de nuevo.`);
+      setSubmitting(false);
+      return;
     }
 
+    // Success
+    setComment('');
+    setRating(5);
+    setIsWritingReview(false);
+    await loadReviews();
     setSubmitting(false);
   };
 

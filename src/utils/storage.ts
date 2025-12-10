@@ -17,6 +17,23 @@ export async function uploadBusinessLogo(businessId: string, file: File) {
   return data.publicUrl;
 }
 
+export async function uploadUserAvatar(userId: string, file: File) {
+  const ext = file.name.split('.').pop() || 'jpg';
+  const path = `${userId}/avatar.${ext}`;
+
+  const { error } = await supabase.storage
+    .from('avatars')
+    .upload(path, file, {
+      upsert: true,
+      cacheControl: '3600',
+    });
+
+  if (error) throw error;
+
+  const { data } = supabase.storage.from('avatars').getPublicUrl(path);
+  return data.publicUrl;
+}
+
 export async function uploadProductImage(
   businessId: string,
   productId: string,

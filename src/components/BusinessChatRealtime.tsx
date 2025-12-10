@@ -39,6 +39,16 @@ export function BusinessChatRealtime({ businessId, businessName }: BusinessChatR
     };
   }, [businessId]);
 
+  const markAsRead = async () => {
+    if (!user) return;
+    try {
+      const viewerType: 'customer' | 'business' = isBusinessOwner ? 'business' : 'customer';
+      await markMessagesAsRead(businessId, viewerType);
+    } catch (error) {
+      console.error('Error marking messages as read:', error);
+    }
+  };
+
   const loadUser = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     setUser(user);
@@ -66,6 +76,13 @@ export function BusinessChatRealtime({ businessId, businessName }: BusinessChatR
       setIsLoading(false);
     }
   };
+
+  // Cuando ya tenemos usuario y mensajes cargados, marcamos como leídos
+  useEffect(() => {
+    if (!user || messages.length === 0) return;
+    markAsRead();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, isBusinessOwner, messages.length, businessId]);
 
   const scrollToBottom = () => {
     setTimeout(() => {

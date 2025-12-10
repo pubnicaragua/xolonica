@@ -1,18 +1,28 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Search, Filter } from 'lucide-react';
 import { BusinessCard } from '@/components/BusinessCard';
 import { supabase } from '@/utils/supabase/client';
 import { CATEGORIES, NICARAGUA_CITIES } from '@/types/database';
 import type { Business } from '@/types/database';
 
-export default function BusinessesPage() {
+function BusinessesPageContent() {
+  const searchParams = useSearchParams();
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [loading, setLoading] = useState(true);
   const [categoryFilter, setCategoryFilter] = useState('');
   const [cityFilter, setCityFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('verified');
+
+  useEffect(() => {
+    const initialCategory = searchParams.get('category') || '';
+    const initialCity = searchParams.get('city') || '';
+
+    if (initialCategory) setCategoryFilter(initialCategory);
+    if (initialCity) setCityFilter(initialCity);
+  }, [searchParams]);
 
   useEffect(() => {
     loadBusinesses();
@@ -60,24 +70,19 @@ export default function BusinessesPage() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         {/* Filters */}
-        <div className="relative mb-10 group">
-          <div
-            className="pointer-events-none absolute -inset-[2px] rounded-3xl bg-gradient-to-r from-blue-400 via-sky-400 to-purple-500 opacity-0 blur group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-300"
-            aria-hidden="true"
-          />
-          <div className="bg-white rounded-3xl shadow-sm p-6 md:p-8 border border-gray-100 relative">
-          <div className="flex items-center mb-6">
-            <div className="w-9 h-9 rounded-full bg-blue-50 flex items-center justify-center mr-3">
-              <Filter className="w-5 h-5 text-[#003893]" />
+        <div className="mb-10">
+          <div className="bg-white rounded-3xl shadow-sm p-6 md:p-8 border border-gray-100">
+            <div className="flex items-center mb-4">
+              <div className="w-9 h-9 rounded-full bg-blue-50 flex items-center justify-center mr-3">
+                <Filter className="w-5 h-5 text-[#003893]" />
+              </div>
+              <div>
+                <h3 className="text-gray-900 font-semibold">Filtrar negocios</h3>
+                <p className="text-sm text-gray-500">Ajusta los filtros para encontrar el negocio ideal.</p>
+              </div>
             </div>
-        </div>
-            <div>
-              <h3 className="text-gray-900 font-semibold">Filtrar negocios</h3>
-              <p className="text-sm text-gray-500">Ajusta los filtros para encontrar el negocio ideal.</p>
-            </div>
-          </div>
 
-          <div className="grid md:grid-cols-3 gap-6">
+            <div className="grid md:grid-cols-3 gap-6">
             <div>
               <label className="block text-gray-700 mb-2 font-semibold">
                 Categoría
@@ -130,19 +135,20 @@ export default function BusinessesPage() {
             </div>
           </div>
 
-              {(categoryFilter || cityFilter || statusFilter !== 'verified') && (
-                <button
-                  onClick={() => {
-                    setCategoryFilter('');
-                    setCityFilter('');
-                    setStatusFilter('verified');
-                  }}
-                  className="mt-4 inline-flex items-center text-[#003893] hover:text-[#0057B7] text-sm font-medium"
-                >
-                  Limpiar filtros
-                </button>
-              )}
-          </div>
+          {(categoryFilter || cityFilter || statusFilter !== 'verified') && (
+            <button
+              onClick={() => {
+                setCategoryFilter('');
+                setCityFilter('');
+                setStatusFilter('verified');
+              }}
+              className="mt-4 inline-flex items-center text-[#003893] hover:text-[#0057B7] text-sm font-medium"
+            >
+              Limpiar filtros
+            </button>
+          )}
+        </div>
+        </div>
 
         {/* Results */}
         {loading ? (
@@ -175,5 +181,19 @@ export default function BusinessesPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function BusinessesPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="inline-block w-8 h-8 border-4 border-[#003893] border-t-transparent rounded-full animate-spin"></div>
+        </div>
+      }
+    >
+      <BusinessesPageContent />
+    </Suspense>
   );
 }

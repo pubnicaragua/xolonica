@@ -13,6 +13,9 @@ export default function ProductSearchPage() {
   const [recentProducts, setRecentProducts] = useState<ProductSearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
+  const [suggestions, setSuggestions] = useState<ProductSearchResult[]>([]);
+  const [isSuggesting, setIsSuggesting] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   useEffect(() => {
     loadRecentProducts();
@@ -36,8 +39,43 @@ export default function ProductSearchPage() {
       console.error('Error searching:', error);
     } finally {
       setIsSearching(false);
+      setShowSuggestions(false);
     }
   };
+
+  // Reset search when query is empty
+  useEffect(() => {
+    if (!query.trim() && hasSearched) {
+      setHasSearched(false);
+      setResults([]);
+      setSuggestions([]);
+      setShowSuggestions(false);
+    }
+  }, [query, hasSearched]);
+
+  // Live suggestions
+  useEffect(() => {
+    if (!query.trim()) {
+      setSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+
+    const handler = setTimeout(async () => {
+      setIsSuggesting(true);
+      try {
+        const products = await searchProducts(query, 6);
+        setSuggestions(products);
+        setShowSuggestions(true);
+      } catch (error) {
+        console.error('Error loading suggestions:', error);
+      } finally {
+        setIsSuggesting(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(handler);
+  }, [query]);
 
   const displayProducts = hasSearched ? results : recentProducts;
 
@@ -56,17 +94,14 @@ export default function ProductSearchPage() {
 
             {/* Search form */}
             <form onSubmit={handleSearch} className="max-w-2xl mx-auto">
-              <div className="relative group">
-                <div
-                  className="pointer-events-none absolute -inset-[2px] rounded-2xl bg-gradient-to-r from-blue-400 via-sky-400 to-purple-500 opacity-0 blur group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-300"
-                  aria-hidden="true"
-                />
-                <div className="relative bg-white/90 rounded-2xl shadow-2xl">
+              <div className="relative">
+                <div className="relative bg-white/95 rounded-2xl shadow-2xl border border-blue-100">
                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-6 h-6" />
                   <input
                     type="text"
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
+                    onFocus={() => query.trim() && setShowSuggestions(true)}
                     placeholder="Ej: licuadora, repuestos de carro, servicios de plomería..."
                     className="w-full pl-14 pr-4 py-4 rounded-2xl text-gray-900 text-lg focus:outline-none bg-transparent"
                   />
@@ -85,6 +120,34 @@ export default function ProductSearchPage() {
                     )}
                   </button>
                 </div>
+
+                {showSuggestions && (suggestions.length > 0 || isSuggesting) && (
+                  <div className="absolute left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-gray-100 max-h-80 overflow-y-auto z-20">
+                    {isSuggesting && (
+                      <div className="flex items-center gap-2 px-4 py-3 text-sm text-gray-500">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Buscando sugerencias...</span>
+                      </div>
+                    )}
+                    {suggestions.map((product) => (
+                      <Link
+                        key={product.id}
+                        href={`/negocios/${product.business_id}`}
+                        className="flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition-colors"
+                      >
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-gray-900 truncate">{product.name}</p>
+                         <p className="text-xs text-gray-500 truncate">
+                          {product.business_name} · {product.business_city}
+                        </p>
+                        </div>
+                        <span className="ml-3 text-sm font-semibold text-blue-600 whitespace-nowrap">
+                          C${product.price.toLocaleString('es-NI')}
+                        </span>
+                      </Link>
+                    ))}
+                  </div>
+                )}
               </div>
             </form>
           </div>

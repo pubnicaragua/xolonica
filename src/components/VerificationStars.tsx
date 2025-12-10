@@ -1,6 +1,7 @@
 'use client';
 
-import { Star } from 'lucide-react';
+import { useState } from 'react';
+import { Star, HelpCircle } from 'lucide-react';
 
 interface VerificationStarsProps {
   level: number; // 1, 2, o 3
@@ -15,9 +16,9 @@ const VERIFICATION_LABELS = {
 };
 
 const VERIFICATION_DESCRIPTIONS = {
-  1: 'Nombre del negocio verificado',
-  2: 'Cédula y foto verificadas',
-  3: 'Tienda física, RUC y cuenta bancaria verificados',
+  1: 'Información básica del negocio verificada por nuestro equipo.',
+  2: 'Cédula del propietario y documentos verificados. Mayor confianza.',
+  3: 'Tienda física verificada con visita, RUC y cuenta bancaria. Máxima confianza.',
 };
 
 export function VerificationStars({ level, showLabel = false, size = 'md' }: VerificationStarsProps) {
@@ -49,7 +50,7 @@ export function VerificationStars({ level, showLabel = false, size = 'md' }: Ver
       </div>
       {showLabel && (
         <span className={`${textSizeClasses[size]} font-medium text-gray-700`}>
-          {VERIFICATION_LABELS[level as keyof typeof VERIFICATION_LABELS]}
+          {level}/3 - {VERIFICATION_LABELS[level as keyof typeof VERIFICATION_LABELS]}
         </span>
       )}
     </div>
@@ -93,6 +94,31 @@ export function VerificationTooltip({ level }: { level: number }) {
         <p className="text-xs text-gray-500 mt-2">
           Este negocio puede aumentar su nivel de verificación completando más pasos.
         </p>
+      )}
+    </div>
+  );
+}
+
+export function VerificationStarsWithTooltip({ level, size = 'md' }: { level: number; size?: 'sm' | 'md' | 'lg' }) {
+  const [showTooltip, setShowTooltip] = useState(false);
+
+  return (
+    <div className="inline-flex items-center gap-2 relative">
+      <VerificationStars level={level} size={size} />
+      <span className="text-sm font-medium text-gray-700">{level}/3</span>
+      <button
+        type="button"
+        onMouseEnter={() => setShowTooltip(true)}
+        onMouseLeave={() => setShowTooltip(false)}
+        onClick={() => setShowTooltip(!showTooltip)}
+        className="text-blue-600 hover:text-blue-700 transition"
+      >
+        <HelpCircle className="w-4 h-4" />
+      </button>
+      {showTooltip && (
+        <div className="absolute left-0 top-full mt-2 z-50">
+          <VerificationTooltip level={level} />
+        </div>
       )}
     </div>
   );

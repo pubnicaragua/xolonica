@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { GlobalChatbot } from '@/components/GlobalChatbot';
+import { FloatingChatWidget } from '@/components/FloatingChatWidget';
 import '@/styles/globals.css';
 
 export const metadata: Metadata = {
@@ -23,6 +24,7 @@ export default function RootLayout({
         <main className="min-h-screen">{children}</main>
         <Footer />
         <GlobalChatbot />
+        <FloatingChatWidget />
       </body>
     </html>
   );

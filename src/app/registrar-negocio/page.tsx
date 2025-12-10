@@ -17,11 +17,13 @@ export default function RegisterBusinessPage() {
   const [ruc, setRuc] = useState('');
   const [category, setCategory] = useState('');
   const [city, setCity] = useState('');
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedCities, setSelectedCities] = useState<string[]>([]);
   const [municipality, setMunicipality] = useState('');
   const [neighborhood, setNeighborhood] = useState('');
   const [address, setAddress] = useState('');
-  const [phone, setPhone] = useState('');
-  const [whatsapp, setWhatsapp] = useState('');
+  const [phone, setPhone] = useState('+505 ');
+  const [whatsapp, setWhatsapp] = useState('+505 ');
   const [email, setEmail] = useState('');
   const [facebook, setFacebook] = useState('');
   const [instagram, setInstagram] = useState('');
@@ -39,6 +41,7 @@ export default function RegisterBusinessPage() {
   const [tagline, setTagline] = useState('');
   const [description, setDescription] = useState('');
   const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
 
   // Step 3: Products
   const [products, setProducts] = useState<
@@ -74,43 +77,13 @@ export default function RegisterBusinessPage() {
     setLoading(true);
 
     try {
-      // Obtener o crear usuario
-      let { data: { user } } = await supabase.auth.getUser();
-      
-      // Si no está autenticado, crear cuenta automáticamente
-      if (!user) {
-        console.log('📝 Usuario no autenticado, creando cuenta automática...');
-        
-        // Generar password temporal
-        const tempPassword = `Xolo${Date.now()}!`;
-        
-        // Crear usuario con el email del negocio
-        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-          email: email,
-          password: tempPassword,
-          options: {
-            data: {
-              business_name: businessName,
-            }
-          }
-        });
-
-        if (signUpError) {
-          console.error('❌ Error al crear usuario:', signUpError);
-          alert('Error al crear la cuenta. Por favor intenta con otro email.');
-          setLoading(false);
-          return;
-        }
-
-        user = signUpData.user;
-        console.log('✅ Usuario creado:', user?.id);
-        
-        // Informar al usuario
-        alert(`✅ Se ha creado tu cuenta con el email: ${email}\nRecibirás un correo para confirmar tu cuenta y establecer tu contraseña.`);
-      }
+      // Verificar usuario autenticado
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
 
       if (!user) {
-        alert('Error al procesar el registro. Inténtalo de nuevo.');
+        alert('Primero debes crear tu cuenta e iniciar sesión para enviar la solicitud de tu negocio.');
         setLoading(false);
         return;
       }
@@ -181,13 +154,16 @@ export default function RegisterBusinessPage() {
     // Upload logo if provided
     if (logoFile) {
       try {
+        console.log('📤 Subiendo logo...');
         const logoUrl = await uploadBusinessLogo(businessData.id, logoFile);
+        console.log('✅ Logo subido:', logoUrl);
         await supabase
           .from('businesses')
           .update({ logo_url: logoUrl })
           .eq('id', businessData.id);
       } catch (e) {
-        console.error(e);
+        console.error('❌ Error al subir logo:', e);
+        alert(`Error al subir el logo: ${(e as Error).message}. El negocio se registró pero sin logo.`);
       }
     }
 
@@ -200,6 +176,7 @@ export default function RegisterBusinessPage() {
           uploadPromises.push(
             (async () => {
               try {
+                console.log(`📤 Subiendo imagen del producto ${index + 1}...`);
                 // Agregar marca de agua a la imagen
                 const watermarkedFile = await addWatermark(original.imageFile as File);
                 const imageUrl = await uploadProductImage(
@@ -207,12 +184,14 @@ export default function RegisterBusinessPage() {
                   created.id,
                   watermarkedFile
                 );
+                console.log(`✅ Imagen del producto ${index + 1} subida:`, imageUrl);
                 await supabase
                   .from('products')
                   .update({ image_url: imageUrl })
                   .eq('id', created.id);
               } catch (err) {
-                console.error(err);
+                console.error(`❌ Error al subir imagen del producto ${index + 1}:`, err);
+                alert(`Error al subir imagen del producto "${original.name}": ${(err as Error).message}`);
               }
             })()
           );
@@ -341,38 +320,72 @@ export default function RegisterBusinessPage() {
                   <label className="block text-gray-700 mb-2">
                     Categoría *
                   </label>
-                  <select
-                    value={category}
-                    onChange={(e) => setCategory(e.target.value)}
-                    required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003893]"
-                  >
-                    <option value="">Selecciona una categoría</option>
-                    {CATEGORIES.map((cat) => (
-                      <option key={cat} value={cat}>
-                        {cat}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="border border-gray-200 rounded-lg p-3 max-h-40 overflow-y-auto">
+                    <p className="text-xs text-gray-600 mb-2">
+                      Puedes seleccionar varias categorías. Usaremos la primera como categoría principal.
+                    </p>
+                    <div className="grid md:grid-cols-2 gap-2">
+                      {CATEGORIES.map((cat) => {
+                        const checked = selectedCategories.includes(cat);
+                        return (
+                          <label key={cat} className="flex items-center gap-2 text-sm text-gray-700">
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={(e) => {
+                                let next: string[];
+                                if (e.target.checked) {
+                                  next = [...selectedCategories, cat];
+                                } else {
+                                  next = selectedCategories.filter((c) => c !== cat);
+                                }
+                                setSelectedCategories(next);
+                                setCategory(next[0] || '');
+                              }}
+                              className="w-4 h-4"
+                            />
+                            <span>{cat}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
                 </div>
 
                 <div>
                   <label className="block text-gray-700 mb-2">
                     Departamento / Ciudad *
                   </label>
-                  <select
-                    value={city}
-                    onChange={(e) => setCity(e.target.value)}
-                    required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003893]"
-                  >
-                    <option value="">Selecciona una ciudad</option>
-                    {NICARAGUA_CITIES.map((c) => (
-                      <option key={c} value={c}>
-                        {c}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="border border-gray-200 rounded-lg p-3 max-h-40 overflow-y-auto">
+                    <p className="text-xs text-gray-600 mb-2">
+                      Puedes seleccionar varias ciudades. Usaremos la primera como ciudad principal.
+                    </p>
+                    <div className="grid md:grid-cols-2 gap-2">
+                      {NICARAGUA_CITIES.map((c) => {
+                        const checked = selectedCities.includes(c);
+                        return (
+                          <label key={c} className="flex items-center gap-2 text-sm text-gray-700">
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={(e) => {
+                                let next: string[];
+                                if (e.target.checked) {
+                                  next = [...selectedCities, c];
+                                } else {
+                                  next = selectedCities.filter((cityItem) => cityItem !== c);
+                                }
+                                setSelectedCities(next);
+                                setCity(next[0] || '');
+                              }}
+                              className="w-4 h-4"
+                            />
+                            <span>{c}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
                 </div>
 
                 <div>
@@ -426,27 +439,45 @@ export default function RegisterBusinessPage() {
                   <label className="block text-gray-700 mb-2">
                     Teléfono de Contacto *
                   </label>
-                  <input
-                    type="tel"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003893]"
-                    placeholder="+505 8888 1234"
-                  />
+                  <div className="relative">
+                    <div className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center gap-2 pointer-events-none">
+                      <span className="text-xl">🇳🇮</span>
+                      <span className="text-gray-600 font-medium">+505</span>
+                    </div>
+                    <input
+                      type="tel"
+                      value={phone.replace('+505 ', '')}
+                      onChange={(e) => {
+                        const digits = e.target.value.replace(/\D/g, '');
+                        setPhone(`+505 ${digits}`);
+                      }}
+                      required
+                      className="w-full pl-24 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003893]"
+                      placeholder="8888 1234"
+                    />
+                  </div>
                 </div>
 
                 <div>
                   <label className="block text-gray-700 mb-2">
                     WhatsApp
                   </label>
-                  <input
-                    type="tel"
-                    value={whatsapp}
-                    onChange={(e) => setWhatsapp(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003893]"
-                    placeholder="+505 8888 1234"
-                  />
+                  <div className="relative">
+                    <div className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center gap-2 pointer-events-none">
+                      <span className="text-xl">🇳🇮</span>
+                      <span className="text-gray-600 font-medium">+505</span>
+                    </div>
+                    <input
+                      type="tel"
+                      value={whatsapp.replace('+505 ', '')}
+                      onChange={(e) => {
+                        const digits = e.target.value.replace(/\D/g, '');
+                        setWhatsapp(`+505 ${digits}`);
+                      }}
+                      className="w-full pl-24 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003893]"
+                      placeholder="8888 1234"
+                    />
+                  </div>
                 </div>
 
                 <div>
@@ -489,32 +520,41 @@ export default function RegisterBusinessPage() {
                 </div>
               </div>
 
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                <p className="text-sm text-gray-700">
+                  <strong>📱 Redes Sociales:</strong> Debes completar al menos Facebook o Instagram (o ambos). Puedes pegar la URL completa o escribir tu nombre de usuario.
+                </p>
+                <p className="text-xs text-gray-600 mt-1">
+                  Ejemplo URL: https://facebook.com/MiNegocio | Ejemplo usuario: @MiNegocio
+                </p>
+              </div>
+
               <div className="grid md:grid-cols-3 gap-6">
                 <div>
-                  <label className="block text-gray-700 mb-2">
-                    Facebook *
+                  <label className="block text-gray-700 mb-2 flex items-center gap-2">
+                    Facebook
+                    <span className="text-xs text-gray-500">(URL o @usuario)</span>
                   </label>
                   <input
-                    type="url"
+                    type="text"
                     value={facebook}
                     onChange={(e) => setFacebook(e.target.value)}
-                    required
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003893]"
-                    placeholder="https://facebook.com/..."
+                    placeholder="https://facebook.com/... o @MiNegocio"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-gray-700 mb-2">
-                    Instagram *
+                  <label className="block text-gray-700 mb-2 flex items-center gap-2">
+                    Instagram
+                    <span className="text-xs text-gray-500">(URL o @usuario)</span>
                   </label>
                   <input
-                    type="url"
+                    type="text"
                     value={instagram}
                     onChange={(e) => setInstagram(e.target.value)}
-                    required
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003893]"
-                    placeholder="https://instagram.com/..."
+                    placeholder="https://instagram.com/... o @MiNegocio"
                   />
                 </div>
 
@@ -589,10 +629,23 @@ export default function RegisterBusinessPage() {
                   accept="image/*"
                   onChange={(e) => {
                     const file = e.target.files?.[0];
-                    if (file) setLogoFile(file);
+                    if (file) {
+                      setLogoFile(file);
+                      const reader = new FileReader();
+                      reader.onloadend = () => {
+                        setLogoPreview(reader.result as string);
+                      };
+                      reader.readAsDataURL(file);
+                    }
                   }}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003893]"
                 />
+                {logoPreview && (
+                  <div className="mt-4">
+                    <p className="text-sm text-gray-600 mb-2">Vista previa:</p>
+                    <img src={logoPreview} alt="Preview" className="w-32 h-32 object-cover rounded-lg border border-gray-300" />
+                  </div>
+                )}
                 <p className="text-sm text-gray-500 mt-1">
                   Formatos: JPG, PNG. Tamaño máximo: 2MB
                 </p>
@@ -694,6 +747,16 @@ export default function RegisterBusinessPage() {
                       }}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003893]"
                     />
+                    {product.imageFile && (
+                      <div className="mt-3">
+                        <p className="text-xs text-gray-600 mb-2">Vista previa (se agregará marca de agua al subir):</p>
+                        <img 
+                          src={URL.createObjectURL(product.imageFile)} 
+                          alt="Preview" 
+                          className="w-full h-48 object-cover rounded-lg border border-gray-300" 
+                        />
+                      </div>
+                    )}
                     <p className="text-sm text-gray-500 mt-1">
                       Se agregará marca de agua "Xolonica.store" automáticamente
                     </p>
@@ -741,9 +804,15 @@ export default function RegisterBusinessPage() {
             {step < 3 ? (
               <button
                 onClick={() => {
-                  if (step === 1 && (!businessName || !category || !city || !phone || (!storeType.fisica && !storeType.online) || !facebook || !instagram)) {
-                    alert('Por favor completa los campos obligatorios (incluyendo tipo de tienda y redes sociales)');
-                    return;
+                  if (step === 1) {
+                    if (!businessName || !category || !city || !phone || (!storeType.fisica && !storeType.online)) {
+                      alert('Por favor completa los campos obligatorios (nombre, categoría, ciudad, teléfono y tipo de tienda)');
+                      return;
+                    }
+                    if (!facebook.trim() && !instagram.trim()) {
+                      alert('Debes completar al menos Facebook o Instagram (URL o nombre de usuario)');
+                      return;
+                    }
                   }
                   if (step === 2 && (!tagline || !description)) {
                     alert('Por favor completa los campos obligatorios');

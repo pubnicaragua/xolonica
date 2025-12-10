@@ -14,7 +14,7 @@ import { ProductCard } from '@/components/ProductCard';
 import { ReviewsList } from '@/components/ReviewsList';
 import { BusinessChatRealtime } from '@/components/BusinessChatRealtime';
 import { BusinessCard } from '@/components/BusinessCard';
-import { VerificationStars } from '@/components/VerificationStars';
+import { VerificationStarsWithTooltip } from '@/components/VerificationStars';
 import type { Business, Product } from '@/types/database';
 
 async function getBusinessData(id: string) {
@@ -90,7 +90,7 @@ export default async function BusinessProfilePage({
                   </p>
                 </div>
                 <div className="mt-1 md:mt-0 flex flex-col gap-2">
-                  <VerificationStars level={business.verification_level || 1} showLabel size="lg" />
+                  <VerificationStarsWithTooltip level={business.verification_level || 1} size="lg" />
                   {business.status === 'verified' ? (
                     <span className="inline-flex items-center px-4 py-2 rounded-full bg-[#2D9B4F] text-white text-sm font-semibold">
                       <CheckCircle className="w-5 h-5 mr-2" />
@@ -242,7 +242,7 @@ export default async function BusinessProfilePage({
 
         {/* Chat Section */}
         <section className="">
-          <h2 className="text-gray-900 mb-4 text-xl font-semibold">Contacta al Negocio</h2>
+          <h2 className="text-gray-900 mb-4 text-xl font-semibold">Contacta al negocio</h2>
           <BusinessChatRealtime businessId={business.id} businessName={business.name} />
         </section>
 
