@@ -54,9 +54,10 @@ export const revalidate = 1800; // Revalidate every 30 minutes (ISR)
 export default async function BusinessProfilePage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
-  const data = await getBusinessData(params.id);
+  const { id } = await params;
+  const data = await getBusinessData(id);
 
   if (!data) {
     notFound();

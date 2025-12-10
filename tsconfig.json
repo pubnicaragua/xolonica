@@ -34,6 +34,12 @@
     "**/*.tsx"
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "src/components/ui",
+    "src/main.tsx",
+    "src/App.tsx",
+    "src/index.css",
+    "src/supabase/functions",
+    "vite.config.ts"
   ]
 }
