@@ -11,8 +11,10 @@ const nextConfig = {
       },
     ],
   },
+  // Configuración mínima para que Next 16 no marque error al usar Turbopack
+  turbopack: {},
   webpack: (config, { isServer }) => {
-    // Asegurar que webpack resuelva los alias correctamente
+    // Asegurar que webpack resuelva los alias correctamente cuando se use webpack
     config.resolve.alias = {
       ...config.resolve.alias,
       '@': path.resolve(__dirname, 'src'),
