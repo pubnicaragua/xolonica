@@ -1,0 +1,25 @@
+/** @type {import('next').NextConfig} */
+const path = require('path');
+
+const nextConfig = {
+  reactStrictMode: true,
+  swcMinify: true,
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**.supabase.co',
+      },
+    ],
+  },
+  webpack: (config, { isServer }) => {
+    // Asegurar que webpack resuelva los alias correctamente
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      '@': path.resolve(__dirname, 'src'),
+    };
+    return config;
+  },
+};
+
+module.exports = nextConfig;
