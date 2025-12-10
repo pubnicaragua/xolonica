@@ -74,14 +74,48 @@ export default function RegisterBusinessPage() {
     setLoading(true);
 
     try {
-      // Obtener usuario actual
-      const { data: { user } } = await supabase.auth.getUser();
+      // Obtener o crear usuario
+      let { data: { user } } = await supabase.auth.getUser();
       
+      // Si no está autenticado, crear cuenta automáticamente
       if (!user) {
-        alert('Debes estar autenticado para registrar un negocio');
+        console.log('📝 Usuario no autenticado, creando cuenta automática...');
+        
+        // Generar password temporal
+        const tempPassword = `Xolo${Date.now()}!`;
+        
+        // Crear usuario con el email del negocio
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+          email: email,
+          password: tempPassword,
+          options: {
+            data: {
+              business_name: businessName,
+            }
+          }
+        });
+
+        if (signUpError) {
+          console.error('❌ Error al crear usuario:', signUpError);
+          alert('Error al crear la cuenta. Por favor intenta con otro email.');
+          setLoading(false);
+          return;
+        }
+
+        user = signUpData.user;
+        console.log('✅ Usuario creado:', user?.id);
+        
+        // Informar al usuario
+        alert(`✅ Se ha creado tu cuenta con el email: ${email}\nRecibirás un correo para confirmar tu cuenta y establecer tu contraseña.`);
+      }
+
+      if (!user) {
+        alert('Error al procesar el registro. Inténtalo de nuevo.');
         setLoading(false);
         return;
       }
+
+      console.log('👤 Usuario para el negocio:', user.id);
 
       // Insert business
       const { data: businessData, error: businessError } = await supabase

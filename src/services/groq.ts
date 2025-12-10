@@ -1,10 +1,12 @@
 // Servicio para el chatbot con Groq AI
 import Groq from 'groq-sdk';
 
-const groq = new Groq({
-  apiKey: process.env.NEXT_PUBLIC_GROQ_API_KEY,
+const apiKey = process.env.NEXT_PUBLIC_GROQ_API_KEY || '';
+
+const groq = apiKey ? new Groq({
+  apiKey: apiKey,
   dangerouslyAllowBrowser: true,
-});
+}) : null;
 
 const XOLONICA_CONTEXT = `
 Eres un asistente virtual de Xolonica.store, una plataforma nicaragüense que conecta clientes con negocios verificados.
@@ -31,6 +33,10 @@ export async function sendChatMessage(
   conversationHistory: Array<{ role: 'user' | 'assistant'; content: string }> = []
 ): Promise<string> {
   try {
+    if (!groq) {
+      return 'El chatbot no está disponible en este momento. Por favor, contacta con nosotros directamente.';
+    }
+
     const messages: any[] = [
       { role: 'system', content: XOLONICA_CONTEXT },
       ...conversationHistory,

@@ -99,19 +99,31 @@ export default function AdminDashboard() {
   };
 
   const handleApprove = async (businessId: string) => {
+    console.log('🟢 Iniciando aprobación de negocio:', businessId);
+    
     try {
       // Actualizar estado
-      const { error: updateError } = await supabase
+      console.log('📝 Actualizando estado a verified...');
+      const { data: updateData, error: updateError } = await supabase
         .from('businesses')
         .update({ status: 'verified' })
-        .eq('id', businessId);
+        .eq('id', businessId)
+        .select();
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error('❌ Error al actualizar:', updateError);
+        throw updateError;
+      }
+      
+      console.log('✅ Negocio actualizado:', updateData);
 
       // Crear notificación para el dueño
       const business = businesses.find(b => b.id === businessId);
+      console.log('👤 Negocio encontrado:', business);
+      
       if (business && business.owner_id) {
-        await supabase
+        console.log('📧 Creando notificación para owner_id:', business.owner_id);
+        const { data: notifData, error: notifError } = await supabase
           .from('notifications')
           .insert({
             user_id: business.owner_id,
@@ -119,33 +131,55 @@ export default function AdminDashboard() {
             message: `Tu negocio "${business.name}" ha sido aprobado y ahora aparece en Xolonica.store`,
             type: 'approval',
             read: false,
-          });
+          })
+          .select();
+          
+        if (notifError) {
+          console.error('⚠️ Error al crear notificación:', notifError);
+        } else {
+          console.log('✅ Notificación creada:', notifData);
+        }
+      } else {
+        console.warn('⚠️ No se encontró owner_id para el negocio');
       }
 
       // Recargar datos
+      console.log('🔄 Recargando datos...');
       await loadData();
-      alert('Negocio aprobado exitosamente');
+      alert('✅ Negocio aprobado exitosamente');
+      console.log('🎉 Proceso completado');
     } catch (error) {
-      console.error(error);
-      alert('Error al aprobar el negocio');
+      console.error('❌ Error en handleApprove:', error);
+      alert('Error al aprobar el negocio: ' + (error as Error).message);
     }
   };
 
   const handleReject = async (businessId: string) => {
     const reason = prompt('Razón del rechazo (opcional):');
+    console.log('🔴 Iniciando rechazo de negocio:', businessId);
     
     try {
-      const { error: updateError } = await supabase
+      console.log('📝 Actualizando estado a rejected...');
+      const { data: updateData, error: updateError } = await supabase
         .from('businesses')
         .update({ status: 'rejected' })
-        .eq('id', businessId);
+        .eq('id', businessId)
+        .select();
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error('❌ Error al actualizar:', updateError);
+        throw updateError;
+      }
+      
+      console.log('✅ Negocio rechazado:', updateData);
 
       // Crear notificación para el dueño
       const business = businesses.find(b => b.id === businessId);
+      console.log('👤 Negocio encontrado:', business);
+      
       if (business && business.owner_id) {
-        await supabase
+        console.log('📧 Creando notificación para owner_id:', business.owner_id);
+        const { data: notifData, error: notifError } = await supabase
           .from('notifications')
           .insert({
             user_id: business.owner_id,
@@ -153,14 +187,25 @@ export default function AdminDashboard() {
             message: `Tu negocio "${business.name}" ha sido rechazado. Razón: ${reason || 'No especificada'}`,
             type: 'rejection',
             read: false,
-          });
+          })
+          .select();
+          
+        if (notifError) {
+          console.error('⚠️ Error al crear notificación:', notifError);
+        } else {
+          console.log('✅ Notificación creada:', notifData);
+        }
+      } else {
+        console.warn('⚠️ No se encontró owner_id para el negocio');
       }
 
+      console.log('🔄 Recargando datos...');
       await loadData();
-      alert('Negocio rechazado');
+      alert('✅ Negocio rechazado');
+      console.log('🎉 Proceso completado');
     } catch (error) {
-      console.error(error);
-      alert('Error al rechazar el negocio');
+      console.error('❌ Error en handleReject:', error);
+      alert('Error al rechazar el negocio: ' + (error as Error).message);
     }
   };
 
